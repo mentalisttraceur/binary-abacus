@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Interactive Binary Abacus</title>
+<style>
+body
+{
+    background: #222222;
+    padding: 50px;
+    position: absolute;
+    touch-action: manipulation;
+    overscroll-behavior: contain;
+    -webkit-user-select: none;
+}
+
+.abacus
+{
+    border-spacing: 10px;
+}
+
+.abacus td
+{
+    padding: 0;
+}
+
+.bit
+{
+    width: 50px;
+    min-width: 50px;
+    height: 50px;
+    min-height: 50px;
+    border-radius: 50%;
+    touch-action: none;
+}
+
+.off
+{
+    box-shadow: inset 0 0 10px #ffffff;
+}
+
+.on
+{
+    box-shadow:
+        inset 0 0 100px #ffffff,
+        0 0 12px #ffffff;
+}
+
+.bit-divider
+{
+    width: 4px;
+    min-width: 4px;
+}
+.register-bit-divider
+{
+    height: 4px;
+    min-height: 4px;
+}
+
+.register:nth-child(16n+7) .bit-divider:nth-child(32n+16),
+.register-divider:nth-child(16n+8) .register-bit-divider:nth-child(32n+15),
+.register-divider:nth-child(16n+8) .divider-intersection:nth-child(32n+16),
+.register-divider:nth-child(16n+8) .register-bit-divider:nth-child(32n+17),
+.register:nth-child(16n+9) .bit-divider:nth-child(32n+16)
+{
+    background: #777777;
+}
+
+.bit-divider:nth-child(32),
+.register-divider:nth-child(16) .register-bit-divider,
+.register-divider:nth-child(16) .divider-intersection:nth-child(32)
+{
+    background: #aaaaaa;
+}
+</style>
+</head>
+<body>
+<script>
+function toggle(bit_html_node)
+{
+    var class_list = bit_html_node.classList
+    if(class_list.contains('off'))
+    {
+        class_list.replace('off', 'on')
+    }
+    else
+    {
+        class_list.replace('on', 'off')
+    }
+    save_bit(bit_html_node)
+}
+
+var currently_hovered_over_bit_node = null
+var shift = false
+
+function document_onkeydown(event)
+{
+    if(event.key === 'Shift')
+    {
+        if(!shift)
+        {
+            shift = true
+            if(currently_hovered_over_bit_node !== null)
+            {
+                toggle(currently_hovered_over_bit_node)
+            }
+        }
+    }
+}
+
+function document_onkeyup(event)
+{
+    if(event.key === 'Shift')
+    {
+        shift = false
+    }
+}
+
+function document_onpointerdown(event)
+{
+    if(event.pointerType === 'touch')
+    {
+        event.target.releasePointerCapture(event.pointerId)
+    }
+}
+
+document.onkeydown = document_onkeydown
+document.onkeyup = document_onkeyup
+document.onpointerdown = document_onpointerdown
+
+function bit_node_onpointerdown(event)
+{
+    if(event.pointerType === 'touch')
+    {
+        event.target.releasePointerCapture(event.pointerId)
+    }
+    else
+    if(event.buttons & 1)
+    {
+        toggle(event.target)
+    }
+}
+
+function bit_node_onpointerenter(event)
+{
+    if(event.pointerType === 'touch' || event.buttons & 1 || event.shiftKey)
+    {
+        toggle(event.target)
+    }
+    if(event.pointerType !== 'touch')
+    {
+        currently_hovered_over_bit_node = event.target
+    }
+}
+
+function bit_node_onpointerleave(event)
+{
+    if(event.pointerType !== 'touch')
+    {
+        currently_hovered_over_bit_node = null
+    }
+}
+
+function turn_into_bit(html_node)
+{
+    html_node.classList.add('bit')
+    html_node.classList.add('off')
+    html_node.ondragstart = function() { return false }
+    html_node.onpointerdown = bit_node_onpointerdown
+    html_node.onpointerenter = bit_node_onpointerenter
+    html_node.onpointerleave = bit_node_onpointerleave 
+}
+
+function new_bit()
+{
+    var td = document.createElement('td')
+    turn_into_bit(td)
+    return td
+}
+
+function new_bit_divider()
+{
+    var td = document.createElement('td')
+    td.classList.add('bit-divider')
+    return td
+}
+
+function new_register(size)
+{
+    var tr = document.createElement('tr')
+    tr.classList.add('register')
+    for(var index = 0; index < size; index += 1)
+    {
+        var bit = new_bit()
+        bit.setAttribute('index', index)
+        tr.appendChild(bit)
+        if(index < size - 1)
+        {
+            tr.appendChild(new_bit_divider())
+        }
+    }
+    return tr
+}
+
+function new_register_bit_divider()
+{
+    var td = document.createElement('td')
+    td.classList.add('register-bit-divider')
+    return td
+}
+
+function new_divider_intersection()
+{
+    var td = document.createElement('td')
+    td.classList.add('divider-intersection')
+    return td
+}
+
+function new_register_divider(size)
+{
+    var tr = document.createElement('tr')
+    tr.classList.add('register-divider')
+    for(var index = 0; index < size; index += 1)
+    {
+        tr.appendChild(new_register_bit_divider())
+        if(index < size - 1)
+        {
+            tr.appendChild(new_divider_intersection())
+        }
+    }
+    return tr
+}
+
+function new_abacus(registers, width)
+{
+    var table = document.createElement('table')
+    table.classList.add('abacus')
+    for(var index = 0; index < registers; index += 1)
+    {
+        var register = new_register(width)
+        register.setAttribute('index', index)
+        table.append(register)
+        if(index < registers - 1)
+        {
+            table.appendChild(new_register_divider(width))
+        }
+    }
+    return table
+}
+
+function is_reasonable_index(index)
+{
+    return index >= 0 && index < 256
+}
+
+function storage_key(abacus, register, bit)
+{
+    if(!is_reasonable_index(abacus))
+        throw RangeError('abacus: ' + abacus)
+    if(!is_reasonable_index(register))
+        throw RangeError('register: ' + register)
+    if(!is_reasonable_index(bit))
+        throw RangeError('bit: ' + bit)
+    return ['abacus', abacus, register, bit].join('.')
+}
+
+function load_abacus(abacus_html_node)
+{
+    var abacus_index = abacus_html_node.getAttribute('index')
+    var registers = abacus_html_node.querySelectorAll('.register')
+    var register_count = registers.length
+    for(var register_index = 0; register_index < register_count; register_index += 1)
+    {
+        var register = registers[register_index]
+        var bits =  register.querySelectorAll('.bit')
+        var bit_count = bits.length
+        for(var bit_index = 0; bit_index < bit_count; bit_index += 1)
+        {
+            var key = storage_key(abacus_index, register_index, bit_index)
+            var on = sessionStorage.getItem(key)
+            if(on === '1')
+            {
+                toggle(bits[bit_index])
+            }
+        }
+    }
+}
+
+function save_bit(bit_html_node)
+{
+    var bit_index = bit_html_node.getAttribute('index')
+    var register = bit_html_node.parentNode
+    var register_index = register.getAttribute('index')
+    var abacus = register.parentNode
+    var abacus_index = abacus.getAttribute('index')
+    var key = storage_key(abacus_index, register_index, bit_index)
+    if(bit_html_node.classList.contains('on'))
+    {
+        sessionStorage.setItem(key, '1')
+    }
+    else
+    {
+        sessionStorage.removeItem(key)
+    }
+}
+
+function this_page_load_is_a_reload()
+{
+    return performance.navigation.type === 1
+}
+
+if(this_page_load_is_a_reload())
+{
+    sessionStorage.clear()
+}
+var abacus = new_abacus(16, 32)
+abacus.setAttribute('index', 0)
+load_abacus(abacus)
+document.body.appendChild(abacus)
+</script>
+</body>
+</html>
