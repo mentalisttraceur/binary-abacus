@@ -72,6 +72,39 @@ body
 {
     background: #aaaaaa;
 }
+
+@media (forced-colors: active)
+{
+    .off
+    {
+        background: #000000;
+        filter: invert(33%);
+    }
+
+    .on
+    {
+        background: #000000;
+        filter: invert(100%);
+    }
+
+    .register:nth-child(16n+7) .bit-divider:nth-child(32n+16),
+    .register-divider:nth-child(16n+8) .register-bit-divider:nth-child(32n+15),
+    .register-divider:nth-child(16n+8) .divider-intersection:nth-child(32n+16),
+    .register-divider:nth-child(16n+8) .register-bit-divider:nth-child(32n+17),
+    .register:nth-child(16n+9) .bit-divider:nth-child(32n+16)
+    {
+        background: #000000;
+        filter: invert(80%);
+    }
+
+    .bit-divider:nth-child(32),
+    .register-divider:nth-child(16) .register-bit-divider,
+    .register-divider:nth-child(16) .divider-intersection:nth-child(32)
+    {
+        background: #000000;
+        filter: invert(100%);
+    }
+}
 </style>
 </head>
 <body>
