@@ -57,6 +57,17 @@ body
     min-height: 4px;
 }
 
+.off.mark
+{
+    box-shadow: inset 0 0 12px #00ff00;
+}
+.on.mark
+{
+    box-shadow:
+        inset 0 0 100px #00ff00,
+        0 0 12px #00ff00;
+}
+
 .register:nth-child(16n+7) .bit-divider:nth-child(32n+16),
 .register-divider:nth-child(16n+8) .register-bit-divider:nth-child(32n+15),
 .register-divider:nth-child(16n+8) .divider-intersection:nth-child(32n+16),
@@ -85,6 +96,19 @@ body
     {
         background: #000000;
         filter: invert(100%);
+    }
+
+    .off.mark
+    {
+        background: #000000;
+        filter: invert(30%) sepia(100%) saturate(10000%)
+	        hue-rotate(100deg) brightness(100) brightness(33%);
+    }
+    .on.mark
+    {
+        background: #000000;
+        filter: invert(30%) sepia(100%) saturate(10000%)
+	        hue-rotate(100deg) brightness(100);
     }
 
     .register:nth-child(16n+7) .bit-divider:nth-child(32n+16),
@@ -123,8 +147,23 @@ function toggle(bit_html_node)
     save_bit(bit_html_node)
 }
 
+function toggle_mark(bit_html_node)
+{
+    var class_list = bit_html_node.classList
+    if(class_list.contains('mark'))
+    {
+        class_list.remove('mark')
+    }
+    else
+    {
+        class_list.add('mark')
+    }
+    save_bit(bit_html_node)
+}
+
 var currently_hovered_over_bit_node = null
 var shift = false
+var control = false
 
 function document_onkeydown(event)
 {
@@ -139,6 +178,17 @@ function document_onkeydown(event)
             }
         }
     }
+    if(event.key === 'Control')
+    {
+        if(!control)
+        {
+            control = true
+            if(currently_hovered_over_bit_node !== null)
+            {
+                toggle_mark(currently_hovered_over_bit_node)
+            }
+        }
+    }
 }
 
 function document_onkeyup(event)
@@ -146,6 +196,10 @@ function document_onkeyup(event)
     if(event.key === 'Shift')
     {
         shift = false
+    }
+    else if(event.key === 'Control')
+    {
+        control = false
     }
 }
 
@@ -179,6 +233,10 @@ function bit_node_onpointerenter(event)
     if(event.pointerType === 'touch' || event.buttons & 1 || event.shiftKey)
     {
         toggle(event.target)
+    }
+    if(event.ctrlKey)
+    {
+        toggle_mark(event.target)
     }
     if(event.pointerType !== 'touch')
     {
@@ -310,10 +368,16 @@ function load_abacus(abacus_html_node)
         for(var bit_index = 0; bit_index < bit_count; bit_index += 1)
         {
             var key = storage_key(abacus_index, register_index, bit_index)
+            var mark_key = key + '_mark'
             var on = sessionStorage.getItem(key)
+            var mark = sessionStorage.getItem(mark_key)
             if(on === '1')
             {
                 toggle(bits[bit_index])
+            }
+            if(mark === '1')
+            {
+                toggle_mark(bits[bit_index])
             }
         }
     }
@@ -334,6 +398,15 @@ function save_bit(bit_html_node)
     else
     {
         sessionStorage.removeItem(key)
+    }
+    var mark_key = key + '_mark'
+    if(bit_html_node.classList.contains('mark'))
+    {
+        sessionStorage.setItem(mark_key, '1')
+    }
+    else
+    {
+        sessionStorage.removeItem(mark_key)
     }
 }
 
