@@ -162,6 +162,7 @@ function toggle_mark(bit_html_node)
 var currently_hovered_over_bit_node = null
 var shift = false
 var control = false
+var long_pressed = false
 
 function document_onkeydown(event)
 {
@@ -209,15 +210,48 @@ function document_onpointerdown(event)
     }
 }
 
+function document_onpointerup(event)
+{
+    if(event.pointerType === 'touch')
+    {
+        long_pressed = false
+    }
+}
+
 document.onkeydown = document_onkeydown
 document.onkeyup = document_onkeyup
 document.onpointerdown = document_onpointerdown
+document.onpointerup = document_onpointerup
+
+function long_press(bit_html_node)
+{
+    long_pressed = true
+    bit_html_node.long_press_timer = null
+    toggle(bit_html_node)  // undo short press toggle
+    toggle_mark(bit_html_node)
+}
+
+function long_press_timer_start(bit_html_node)
+{
+    bit_html_node.long_press_timer = setTimeout(long_press, 500, bit_html_node)
+}
+
+function long_press_timer_stop(bit_html_node)
+{
+    var timer = bit_html_node.long_press_timer
+    if(timer !== null)
+    {
+        bit_html_node.long_press_timer = null
+        clearTimeout(timer)
+    }
+}
 
 function bit_node_onpointerdown(event)
 {
     if(event.pointerType === 'touch')
     {
         event.target.releasePointerCapture(event.pointerId)
+        long_press_timer_start(event.target)
     }
     else
     if(event.buttons & 1)
@@ -228,11 +262,12 @@ function bit_node_onpointerdown(event)
 
 function bit_node_onpointerenter(event)
 {
-    if(event.pointerType === 'touch' || event.buttons & 1 || event.shiftKey)
+    if(!long_pressed
+    && (event.pointerType === 'touch' || event.buttons & 1 || event.shiftKey))
     {
         toggle(event.target)
     }
-    if(event.ctrlKey)
+    if(event.ctrlKey || long_pressed)
     {
         toggle_mark(event.target)
     }
@@ -244,7 +279,11 @@ function bit_node_onpointerenter(event)
 
 function bit_node_onpointerleave(event)
 {
-    if(event.pointerType !== 'touch')
+    if(event.pointerType === 'touch')
+    {
+        long_press_timer_stop(event.target)
+    }
+    else
     {
         currently_hovered_over_bit_node = null
     }
